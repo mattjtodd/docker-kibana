@@ -1,0 +1,76 @@
+version: '2'
+services:
+
+  # Data
+  data-node1:
+    image: elasticsearch:2.3.3-icu
+    command: elasticsearch -Des.cluster.name=data -Des.node.name=data-node-1 -Des.marvel.agent.exporters.id1.host="http://marvel-node1:9200","http://marvel-node2:9200" -Des.discovery.zen.ping.unicast.hosts=data-node2
+    ports:
+      - 9200:9200
+      - 9300:9300
+    networks:
+      - elastic-data
+    volumes:
+      - data-node1:/usr/share/elasticsearch/data
+
+  data-node2:
+    image: elasticsearch:2.3.3-icu
+    command: elasticsearch -Des.cluster.name=data -Des.node.name=data-node-2 -Des.marvel.agent.exporters.id1.host="http://marvel-node1:9200","http://marvel-node2:9200" -Des.discovery.zen.ping.unicast.hosts=data-node1
+    ports:
+      - 9201:9200
+      - 9301:9300
+    networks:
+      - elastic-data
+    volumes:
+      - data-node2:/usr/share/elasticsearch/data
+
+  # Marvel monitoring cluster
+  marvel-node1:
+    image: elasticsearch:2.3.3
+    command: elasticsearch -Des.cluster.name=marvel-data -Des.node.name=marvel-node-1 -Des.discovery.zen.ping.unicast.hosts=marvel-node2
+    ports:
+      - 9250:9200
+      - 9350:9300
+    networks:
+      - elastic-marvel
+      - elastic-data
+    volumes:
+      - marvel-node1:/usr/share/elasticsearch/data
+
+  marvel-node2:
+    image: elasticsearch:2.3.3
+    command: elasticsearch -Des.cluster.name=marvel-data -Des.node.name=marvel-node-2 -Des.discovery.zen.ping.unicast.hosts=marvel-node1
+    ports:
+      - 9251:9200
+      - 9351:9300
+    networks:
+      - elastic-marvel
+      - elastic-data
+    volumes:
+      - marvel-node2:/usr/share/elasticsearch/data
+
+  # Kibana
+#  kibana:
+#    image: kibana:latest-marvel
+#    environment:
+#      - ELASTICSEARCH_URL=http://marvel-node1:9200
+#    ports: 
+#      - 5601:5601
+#    networks: 
+#      - kibana
+#      - elastic-marvel
+
+networks:
+  elastic-data:
+    driver: bridge
+  elastic-marvel:
+    driver: bridge
+  kibana:
+    driver: bridge
+
+volumes:
+  data-node1:
+  data-node2:
+  marvel-node1:
+  marvel-node2:
+  kibana:
